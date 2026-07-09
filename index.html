@@ -516,6 +516,31 @@ function lineHref(p, v){
 }
 
 var preloadCache = [];  // กัน GC เก็บ Image object ที่ยังโหลดไม่เสร็จ
+/* ===== ปุ่ม back มือถือ ปิด modal แทนย้อนหน้า (History API) ===== */
+var modalOpen = false, closingViaBack = false;
+function markModalOpen(){
+  if(!modalOpen){
+    modalOpen = true;
+    try { history.pushState({ tmModal: true }, ""); } catch(e){}   // เพิ่ม entry ปลอม
+  }
+}
+function markModalClosed(){
+  if(modalOpen){
+    modalOpen = false;
+    if(!closingViaBack){
+      try { history.back(); } catch(e){}   // ปิดจากปุ่ม X/พื้นที่ว่าง -> ลบ entry ปลอม
+    }
+  }
+}
+window.addEventListener("popstate", function(){
+  if(modalOpen){                    // ผู้ใช้กด back ขณะ modal เปิด -> ปิด modal ทุกอัน
+    closingViaBack = true;
+    closeProduct();
+    closeHow();
+    closingViaBack = false;
+  }
+});
+
 function openProduct(id){
   var p = products.filter(function(x){ return x.id === id; })[0];
   if(!p) return;
@@ -523,6 +548,7 @@ function openProduct(id){
   renderModal();
   document.getElementById("productOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
+  markModalOpen();
   var mf = document.getElementById("modalFav");
   if(mf){ mf.onclick = function(e){ e.stopPropagation(); toggleFav(p.id); mf.classList.toggle("on"); var cf = document.querySelector('.fav-btn[data-fav="'+p.id+'"]'); if(cf) cf.classList.toggle("on", isFav(p.id)); updateFavPill(); }; }
   preloadVariants(p);
@@ -578,12 +604,18 @@ function renderModal(){
 }
 
 function closeProduct(){
-  document.getElementById("productOverlay").classList.remove("open");
+  var ov = document.getElementById("productOverlay");
+  if(!ov.classList.contains("open")) return;   // ไม่ได้เปิดอยู่ ไม่ต้องทำอะไร
+  ov.classList.remove("open");
   document.body.style.overflow = "";
+  markModalClosed();
 }
 function closeHow(){
-  document.getElementById("howOverlay").classList.remove("open");
+  var ov = document.getElementById("howOverlay");
+  if(!ov.classList.contains("open")) return;
+  ov.classList.remove("open");
   document.body.style.overflow = "";
+  markModalClosed();
 }
 
 /* theme */
@@ -631,6 +663,7 @@ document.getElementById("searchInput").addEventListener("input", function(e){
 });
 document.getElementById("btnHow").onclick = function(){
   document.getElementById("howOverlay").classList.add("open");
+  markModalOpen();
   document.body.style.overflow = "hidden";
 };
 document.getElementById("btnLineMain").href = LINE_URL;
