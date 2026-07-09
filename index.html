@@ -549,8 +549,6 @@ function openProduct(id){
   document.getElementById("productOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
   markModalOpen();
-  var mf = document.getElementById("modalFav");
-  if(mf){ mf.onclick = function(e){ e.stopPropagation(); toggleFav(p.id); mf.classList.toggle("on"); var cf = document.querySelector('.fav-btn[data-fav="'+p.id+'"]'); if(cf) cf.classList.toggle("on", isFav(p.id)); updateFavPill(); }; }
   preloadVariants(p);
 }
 
@@ -601,6 +599,18 @@ function renderModal(){
   Array.prototype.forEach.call(m.querySelectorAll(".swatch"), function(b){
     b.onclick = function(){ currentVariant = Number(b.getAttribute("data-i")); renderModal(); };
   });
+  // ผูกปุ่มหัวใจใหม่ทุกครั้งที่ render (สลับสีแล้วปุ่มถูกสร้างใหม่)
+  var mf = document.getElementById("modalFav");
+  if(mf){
+    mf.onclick = function(e){
+      e.stopPropagation();
+      toggleFav(p.id);
+      mf.classList.toggle("on");
+      var cf = document.querySelector('.fav-btn[data-fav="' + p.id + '"]');
+      if(cf) cf.classList.toggle("on", isFav(p.id));
+      updateFavPill();
+    };
+  }
 }
 
 function closeProduct(){
