@@ -85,6 +85,7 @@ header.hide{transform:translateY(-100%)}
 .fav-pill.active{background:#D4537E;color:#fff;border-color:#D4537E}
 .fav-pill svg{width:13px;height:13px;fill:currentColor;stroke:currentColor}
 .badge-colors{position:absolute;bottom:8px;right:8px;background:#F1EFE8;color:#444441;font-size:10px;padding:2px 8px;border-radius:999px}
+.badge-new{position:absolute;top:9px;right:9px;z-index:2;background:#E0245E;color:#fff;font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 8px;border-radius:6px;box-shadow:0 2px 6px rgba(224,36,94,.4)}
 .card-body{padding:10px 12px 12px;flex:1;display:flex;flex-direction:column}
 .card-body .card-price{margin-top:auto;padding-top:6px}
 .card-cat{color:var(--txt-3);font-size:10px;margin-bottom:2px}
@@ -155,7 +156,7 @@ header.hide{transform:translateY(-100%)}
 .sk-shimmer::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);animation:shimmer 1.3s infinite}
 [data-theme="light"] .sk-shimmer::after{background:linear-gradient(90deg,transparent,rgba(0,0,0,.05),transparent)}
 @keyframes shimmer{100%{transform:translateX(100%)}}
-.line-ic{width:17px;height:17px;flex-shrink:0}
+.line-ic{width:20px;height:20px;flex-shrink:0;object-fit:contain}
 .to-top{position:fixed;right:16px;bottom:84px;z-index:70;width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--on-accent);border:none;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(8px) scale(.9);transition:opacity .2s,transform .2s}
 .to-top.show{opacity:1;pointer-events:auto;transform:none}
 .to-top:active{transform:scale(.9)}
@@ -207,7 +208,7 @@ header.hide{transform:translateY(-100%)}
     วิธีสั่งซื้อ
   </button>
   <a class="btn btn-line" id="btnLineMain" href="#" target="_blank" rel="noopener">
-    <svg class="line-ic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.64 2 10.13c0 4.03 3.58 7.4 8.42 8.04.33.07.77.22.89.5.1.26.07.66.03.92l-.14.86c-.04.26-.2 1 .88.55 1.08-.46 5.8-3.42 7.92-5.85C21.46 13.5 22 11.9 22 10.13 22 5.64 17.52 2 12 2z"/></svg>
+    <img class="line-ic" src="https://vos.line-scdn.net/landpress-content-v2-tqq6mwxs5qlx5cg0nutma2bg/1c7f9ad5a0d2415cab739ae6e9f71e35-large.png" alt="LINE">
     สั่งซื้อ / สอบถาม
   </a>
 </div>
@@ -364,7 +365,8 @@ function parseGviz(data){
       iImg  = idx(["image","img","imageurl","image url","รูป","picture","photo"]),
       iBrand= idx(["brand","ยี่ห้อ","แบรนด์"]),
       iVar  = idx(["variants","variant","colors","สี"]),
-      iAct  = idx(["active","show","แสดง","status"]);
+      iAct  = idx(["active","show","แสดง","status"]),
+      iNew  = idx(["new","ใหม่","badge"]);
   var out = [];
   (data.table.rows || []).forEach(function(row, n){
     var c = row.c || [];
@@ -386,6 +388,7 @@ function parseGviz(data){
       thaiPrice: Number(val(iThb)) || 0,
       imageUrl: String(val(iImg) || "").trim(),
       brand: String(val(iBrand) || "").trim(),
+      isNew: String(val(iNew) || "").trim().toUpperCase() === "N",
       variants: variants
     });
   });
@@ -446,8 +449,9 @@ function cardImg(p){
   var v = (p.variants && p.variants[0]) || null;
   var src = (v && v.img) || p.imageUrl || "";
   var badge = (p.variants && p.variants.length > 1) ? '<span class="badge-colors">' + p.variants.length + ' สี</span>' : '';
-  if(src) return '<img loading="lazy" src="' + esc(fixImgUrl(src)) + '" alt="' + esc(p.name) + '">' + badge;
-  return '<span class="ph">👟</span>' + badge;
+  var newBadge = p.isNew ? '<span class="badge-new">NEW</span>' : '';
+  if(src) return '<img loading="lazy" src="' + esc(fixImgUrl(src)) + '" alt="' + esc(p.name) + '">' + badge + newBadge;
+  return '<span class="ph">👟</span>' + badge + newBadge;
 }
 
 function swatchRow(p){
