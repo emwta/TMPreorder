@@ -81,9 +81,17 @@ header.hide{transform:translateY(-100%)}
 .fav-btn.on svg{stroke:#E0245E;fill:#E0245E}
 .fav-modal{width:34px;height:34px;top:10px;left:10px;right:auto}
 .fav-modal svg{width:19px;height:19px}
-.img-dots{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2}
-.img-dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.18);transition:.15s}
-.img-dot.on{background:var(--accent);width:16px;border-radius:3px}
+.img-nav{display:none}
+@media(hover:hover) and (min-width:640px){
+  .img-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.75);color:#9a9aa2;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.18);opacity:0;transition:opacity .18s;padding:0}
+  .img-nav svg{width:20px;height:20px;display:block}
+  .img-prev{left:10px}
+  .img-next{right:10px}
+  .modal-img:hover .img-nav{opacity:1}
+  .img-nav:disabled{opacity:0 !important;pointer-events:none}
+  .img-nav:hover{background:#fff;color:#6b6b74}
+  .img-nav:active{transform:translateY(-50%) scale(.92)}
+}
 .img-track{display:flex;width:100%;height:100%;will-change:transform}
 .img-slide{flex:0 0 100%;height:100%;display:flex;align-items:center;justify-content:center}
 .img-slide img{width:100%;height:100%;object-fit:contain}
@@ -630,7 +638,7 @@ function renderModal(){
       '<div class="img-track" id="imgTrack">' + slides + '</div>' +
       '<button class="fav-btn fav-modal' + (isFav(p.id) ? ' on' : '') + '" id="modalFav" aria-label="รายการโปรด"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>' +
       '<button class="modal-close" onclick="closeProduct()">✕</button>' +
-      (multi ? '<div class="img-dots">' + p.variants.map(function(_, di){ return '<span class="img-dot"></span>'; }).join('') + '</div>' : '') +
+      (multi ? '<button class="img-nav img-prev" aria-label="สีก่อนหน้า"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button><button class="img-nav img-next" aria-label="สีถัดไป"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>' : '') +
     '</div>' +
     '<div class="modal-body">' +
       '<div class="modal-name">' + esc(p.name) + '</div>';
@@ -655,6 +663,9 @@ function renderModal(){
   Array.prototype.forEach.call(m.querySelectorAll(".swatch"), function(b){
     b.onclick = function(){ setVariant(Number(b.getAttribute("data-i"))); };
   });
+  var pv = m.querySelector(".img-prev"), nx = m.querySelector(".img-next");
+  if(pv) pv.onclick = function(e){ e.stopPropagation(); setVariant(currentVariant - 1); };
+  if(nx) nx.onclick = function(e){ e.stopPropagation(); setVariant(currentVariant + 1); };
   var mf = document.getElementById("modalFav");
   if(mf){
     mf.onclick = function(e){
@@ -678,8 +689,9 @@ function applyVariantUI(animate){
     tr.style.transition = animate ? "transform .3s cubic-bezier(.22,.61,.36,1)" : "none";
     tr.style.transform = "translateX(" + (-currentVariant * 100) + "%)";
   }
-  var dots = document.querySelectorAll(".img-dot");
-  Array.prototype.forEach.call(dots, function(d, i){ d.classList.toggle("on", i === currentVariant); });
+  var prev = document.querySelector(".img-prev"), next = document.querySelector(".img-next");
+  if(prev) prev.disabled = currentVariant === 0;
+  if(next) next.disabled = currentVariant === (p.variants ? p.variants.length - 1 : 0);
   var sws = document.querySelectorAll(".swatch");
   Array.prototype.forEach.call(sws, function(s, i){ s.classList.toggle("sel", i === currentVariant); });
   var v = (p.variants && p.variants[currentVariant]) || null;
