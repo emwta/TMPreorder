@@ -81,6 +81,12 @@ header.hide{transform:translateY(-100%)}
 .fav-btn.on svg{stroke:#E0245E;fill:#E0245E}
 .fav-modal{width:34px;height:34px;top:10px;left:10px;right:auto}
 .fav-modal svg{width:19px;height:19px}
+.img-dots{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2}
+.img-dot{width:6px;height:6px;border-radius:50%;background:rgba(0,0,0,.18);transition:.15s}
+.img-dot.on{background:var(--accent);width:16px;border-radius:3px}
+.img-track{display:flex;width:100%;height:100%;will-change:transform}
+.img-slide{flex:0 0 100%;height:100%;display:flex;align-items:center;justify-content:center}
+.img-slide img{width:100%;height:100%;object-fit:contain}
 .fav-pill{display:inline-flex;align-items:center;gap:5px}
 .fav-pill.active{background:#D4537E;color:#fff;border-color:#D4537E}
 .fav-pill svg{width:13px;height:13px;fill:currentColor;stroke:currentColor}
@@ -106,8 +112,8 @@ header.hide{transform:translateY(-100%)}
 
 /* footer */
 .footer{position:fixed;bottom:0;left:0;right:0;z-index:60;background:var(--footer-bg);backdrop-filter:blur(10px);border-top:1px solid var(--card-border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;gap:10px;max-width:900px;margin:0 auto}
-@media(min-width:900px){.footer{left:50%;transform:translateX(-50%);border-radius:16px 16px 0 0;border:1px solid var(--card-border);border-bottom:none}}
-.btn{flex:1;height:40px;font-size:14px;font-weight:600;padding:0 12px;border-radius:12px;text-align:center;display:flex;align-items:center;justify-content:center;gap:7px;transition:transform .1s}
+@media(min-width:900px){.footer{border-radius:16px 16px 0 0;border:1px solid var(--card-border);border-bottom:none}}
+.btn{flex:1;height:46px;font-size:14px;font-weight:600;padding:0 12px;border-radius:12px;text-align:center;display:flex;align-items:center;justify-content:center;gap:7px;transition:transform .1s}
 .btn:active{transform:scale(.97)}
 .btn-how{background:var(--card);border:1px solid var(--card-border-hi);color:var(--accent-hi)}
 [data-theme="light"] .btn-how{color:var(--accent);border-color:var(--accent-soft)}
@@ -120,7 +126,7 @@ header.hide{transform:translateY(-100%)}
 .modal{background:var(--modal-bg);border:1px solid var(--card-border-hi);width:100%;max-width:420px;max-height:96vh;overflow-y:auto;border-radius:20px 20px 0 0;animation:slideUp .25s ease}
 @media(min-width:640px){.modal{border-radius:20px;max-width:480px;max-height:88vh}}
 @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
-.modal-img{background:var(--plate);aspect-ratio:1/0.92;display:flex;align-items:center;justify-content:center;position:relative}
+.modal-img{background:var(--plate);aspect-ratio:1/0.92;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;touch-action:pan-y}
 .modal-img img{width:100%;height:100%;object-fit:contain}
 .modal-img .ph{font-size:64px;color:#888780}
 .modal-close{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;background:#F1EFE8;color:#444441;font-size:16px;display:flex;align-items:center;justify-content:center}
@@ -156,7 +162,7 @@ header.hide{transform:translateY(-100%)}
 .sk-shimmer::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);animation:shimmer 1.3s infinite}
 [data-theme="light"] .sk-shimmer::after{background:linear-gradient(90deg,transparent,rgba(0,0,0,.05),transparent)}
 @keyframes shimmer{100%{transform:translateX(100%)}}
-.line-ic{width:30px;height:30px;flex-shrink:0;object-fit:contain}
+.line-ic{width:35px;height:35px;flex-shrink:0;object-fit:contain}
 .to-top{position:fixed;right:16px;bottom:84px;z-index:70;width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--on-accent);border:none;box-shadow:0 4px 14px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(8px) scale(.9);transition:opacity .2s,transform .2s}
 .to-top.show{opacity:1;pointer-events:auto;transform:none}
 .to-top:active{transform:scale(.9)}
@@ -511,6 +517,50 @@ function lineHref(p, v){
 }
 
 var preloadCache = [];  // กัน GC เก็บ Image object ที่ยังโหลดไม่เสร็จ
+/* ===== ปัดซ้าย-ขวาบนรูป modal: ลากตามนิ้ว + เด้งขอบ + snap ===== */
+(function(){
+  var sx = 0, sy = 0, dx = 0, active = false, horiz = null;
+  var pm = document.getElementById("productModal");
+  function getTrack(){ return document.getElementById("imgTrack"); }
+  pm.addEventListener("touchstart", function(e){
+    if(!e.target.closest(".modal-img")) return;
+    if(e.target.closest(".fav-btn") || e.target.closest(".modal-close")) return;
+    var p = currentProduct;
+    if(!p || !p.variants || p.variants.length < 2) return;
+    var t = e.touches[0];
+    sx = t.clientX; sy = t.clientY; dx = 0; active = true; horiz = null;
+  }, { passive: true });
+  pm.addEventListener("touchmove", function(e){
+    if(!active) return;
+    var t = e.touches[0];
+    dx = t.clientX - sx;
+    var dy = t.clientY - sy;
+    if(horiz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) horiz = Math.abs(dx) > Math.abs(dy);
+    if(!horiz) return;                                    // แนวตั้ง = ปล่อยให้เลื่อนหน้า
+    var tr = getTrack(); if(!tr) return;
+    var p = currentProduct;
+    var off = dx;
+    // ที่ขอบ (สีแรกลากขวา / สีสุดท้ายลากซ้าย) หน่วงให้หนืดเหมือน native
+    if((currentVariant === 0 && dx > 0) || (currentVariant === p.variants.length - 1 && dx < 0)) off = dx * 0.3;
+    tr.style.transition = "none";
+    tr.style.transform = "translateX(calc(" + (-currentVariant * 100) + "% + " + off + "px))";
+  }, { passive: true });
+  pm.addEventListener("touchend", function(){
+    if(!active) return;
+    active = false;
+    if(!horiz){ return; }
+    var p = currentProduct; if(!p || !p.variants) return;
+    var tr = getTrack();
+    var w = tr && tr.parentElement ? (tr.parentElement.clientWidth || 300) : 300;
+    var next = currentVariant;
+    if(Math.abs(dx) > Math.max(45, w * 0.18)) next = currentVariant + (dx < 0 ? 1 : -1);
+    if(next < 0) next = 0;
+    if(next > p.variants.length - 1) next = p.variants.length - 1;
+    currentVariant = next;
+    applyVariantUI(true);   // slide เข้าตำแหน่ง (รวมกรณีเด้งกลับ)
+  }, { passive: true });
+})();
+
 /* ===== ปุ่ม back มือถือ ปิด modal แทนย้อนหน้า (History API) ===== */
 var modalOpen = false, closingViaBack = false;
 function markModalOpen(){
@@ -563,21 +613,32 @@ function preloadVariants(p){
 function renderModal(){
   var p = currentProduct;
   var hasV = p.variants && p.variants.length > 0;
-  var v = hasV ? p.variants[currentVariant] : null;
-  var src = (v && v.img) || p.imageUrl || "";
+  var multi = hasV && p.variants.length > 1;
+  // slides: รูปทุกสีเรียงใน track (เลื่อนด้วย transform = ลื่น ไม่ re-render)
+  var slides = "";
+  if(hasV){
+    p.variants.forEach(function(vv){
+      var s = vv.img || p.imageUrl || "";
+      slides += '<div class="img-slide">' + (s ? '<img src="' + esc(fixImgUrl(s)) + '" alt="">' : '<span class="ph">👟</span>') + '</div>';
+    });
+  } else {
+    var s0 = p.imageUrl || "";
+    slides = '<div class="img-slide">' + (s0 ? '<img src="' + esc(fixImgUrl(s0)) + '" alt="">' : '<span class="ph">👟</span>') + '</div>';
+  }
   var html =
     '<div class="modal-img">' +
-      (src ? '<img src="' + esc(fixImgUrl(src)) + '" alt="' + esc(p.name) + '">' : '<span class="ph">👟</span>') +
+      '<div class="img-track" id="imgTrack">' + slides + '</div>' +
       '<button class="fav-btn fav-modal' + (isFav(p.id) ? ' on' : '') + '" id="modalFav" aria-label="รายการโปรด"><svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></button>' +
       '<button class="modal-close" onclick="closeProduct()">✕</button>' +
+      (multi ? '<div class="img-dots">' + p.variants.map(function(_, di){ return '<span class="img-dot"></span>'; }).join('') + '</div>' : '') +
     '</div>' +
     '<div class="modal-body">' +
       '<div class="modal-name">' + esc(p.name) + '</div>';
   if(hasV){
-    html += '<div class="modal-variant">สี: <b>' + esc(v.c) + '</b>' + (v.sku ? ' · ' + esc(v.sku) : '') + '</div>';
+    html += '<div class="modal-variant" id="variantLabel"></div>';
     html += '<div class="swatch-grid">';
     p.variants.forEach(function(vv, i){
-      html += '<button class="swatch' + (i === currentVariant ? ' sel' : '') + '" aria-label="' + esc(vv.c) + '" data-i="' + i + '">' + swatchInner(vv, 120) + '</button>';
+      html += '<button class="swatch" aria-label="' + esc(vv.c) + '" data-i="' + i + '">' + swatchInner(vv, 120) + '</button>';
     });
     html += '</div>';
   } else {
@@ -592,9 +653,8 @@ function renderModal(){
   var m = document.getElementById("productModal");
   m.innerHTML = html;
   Array.prototype.forEach.call(m.querySelectorAll(".swatch"), function(b){
-    b.onclick = function(){ currentVariant = Number(b.getAttribute("data-i")); renderModal(); };
+    b.onclick = function(){ setVariant(Number(b.getAttribute("data-i"))); };
   });
-  // ผูกปุ่มหัวใจใหม่ทุกครั้งที่ render (สลับสีแล้วปุ่มถูกสร้างใหม่)
   var mf = document.getElementById("modalFav");
   if(mf){
     mf.onclick = function(e){
@@ -606,6 +666,33 @@ function renderModal(){
       updateFavPill();
     };
   }
+  applyVariantUI(false);   // จัดตำแหน่งเริ่มต้น (ไม่ animate)
+}
+
+// อัปเดต UI ตาม currentVariant โดยไม่ re-render (track เลื่อนลื่นด้วย CSS transition)
+function applyVariantUI(animate){
+  var p = currentProduct;
+  if(!p) return;
+  var tr = document.getElementById("imgTrack");
+  if(tr){
+    tr.style.transition = animate ? "transform .3s cubic-bezier(.22,.61,.36,1)" : "none";
+    tr.style.transform = "translateX(" + (-currentVariant * 100) + "%)";
+  }
+  var dots = document.querySelectorAll(".img-dot");
+  Array.prototype.forEach.call(dots, function(d, i){ d.classList.toggle("on", i === currentVariant); });
+  var sws = document.querySelectorAll(".swatch");
+  Array.prototype.forEach.call(sws, function(s, i){ s.classList.toggle("sel", i === currentVariant); });
+  var v = (p.variants && p.variants[currentVariant]) || null;
+  var lb = document.getElementById("variantLabel");
+  if(lb && v) lb.innerHTML = 'สี: <b>' + esc(v.c) + '</b>' + (v.sku ? ' · ' + esc(v.sku) : '');
+}
+
+function setVariant(i){
+  var p = currentProduct;
+  if(!p || !p.variants) return;
+  if(i < 0 || i >= p.variants.length || i === currentVariant) return;
+  currentVariant = i;
+  applyVariantUI(true);
 }
 
 function closeProduct(){
