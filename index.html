@@ -251,7 +251,7 @@ header.hide{transform:translateY(-100%)}
 /* ============ CONFIG ============ */
 var SHEET_ID  = "1016w0zQKcUtd7auLw4KD4yEXNQ7hr7pbtA1zj5D860A"; // Google Sheet (ต้องเปิด anyone with link: Viewer)
 var SHEET_TAB = "products";
-var API_URL   = "";   // ถ้าจะใช้ Apps Script แทน ใส่ URL ที่นี่ (จะมีสิทธิ์เหนือ SHEET_ID)
+var API_URL   = "https://script.google.com/macros/s/AKfycbwGyIo0zfRQB9UnVMLqTKxWm_ZEgU_N9cbahOVRK3ERPdC4rq2X8koMvPY3GE9Tr75f/exec";   // ถ้าจะใช้ Apps Script แทน ใส่ URL ที่นี่ (จะมีสิทธิ์เหนือ SHEET_ID)
 var LINE_URL  = "https://line.me/ti/p/pjAraL5m1j";  // ใส่ LINE OA ID ของร้าน
 var FLIGHT_DATE   = "28 ก.ค. - 2 ส.ค. 69";   // รอบบิน (เว้นว่าง "" = ซ่อนแถบ)
 var DELIVERY_DATE = "3-4 ส.ค. 69";           // จัดส่งถึงไทย
@@ -293,6 +293,29 @@ var swatchInner = function(v, px){
 
 var loadNotes = [];
 function note(msg){ loadNotes.push(msg); console.warn(msg); }
+
+/* ===== สถิติผู้เข้าชม: ping เงียบๆ ไป Apps Script (ไม่หน่วงหน้า ไม่รอคำตอบ) ===== */
+function trackPing_(params){
+  if(!API_URL) return;
+  try {
+    var img = new Image();
+    img.src = API_URL + (API_URL.indexOf("?") >= 0 ? "&" : "?") + params + "&r=" + Date.now();
+  } catch(e){}
+}
+function trackView(){
+  var nv = 0;
+  try {
+    var today = new Date().toISOString().slice(0, 10);
+    if(localStorage.getItem("tmcat_lastvisit") !== today){
+      nv = 1;
+      localStorage.setItem("tmcat_lastvisit", today);   // เครื่องนี้นับเป็น visitor ใหม่วันละครั้ง
+    }
+  } catch(e){}
+  trackPing_("track=view&nv=" + nv);
+}
+function trackProduct(p){
+  trackPing_("track=product&pid=" + encodeURIComponent(p.id) + "&pname=" + encodeURIComponent(String(p.name || "").slice(0, 80)));
+}
 
 function showGridMessage(title, sub){
   var grid = document.getElementById("grid");
@@ -598,6 +621,7 @@ function openProduct(id){
   var p = products.filter(function(x){ return x.id === id; })[0];
   if(!p) return;
   currentProduct = p; currentVariant = 0;
+  trackProduct(p);
   renderModal();
   document.getElementById("productOverlay").classList.add("open");
   document.body.style.overflow = "hidden";
@@ -828,6 +852,7 @@ showSkeleton();
     requestAnimationFrame(step);
   };
 })();
+trackView();
 load();
 </script>
 </body>
