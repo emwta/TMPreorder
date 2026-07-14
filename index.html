@@ -383,7 +383,7 @@ function loadFromSheet(){
           "/gviz/tq?tqx=out:json;responseHandler:__tmSheetCb&headers=1&sheet=" +
           encodeURIComponent(SHEET_TAB);
   s.onerror = function(){ fallback("โหลดสคริปต์ไม่ได้ (เช็คว่าแชร์ชีตแบบ anyone with link หรือยัง)"); };
-  setTimeout(function(){ fallback("timeout 8 วินาที"); }, 8000);
+  setTimeout(function(){ fallback("timeout 20 วินาที"); }, 20000);
   document.head.appendChild(s);
 }
 
